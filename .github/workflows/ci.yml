@@ -1,0 +1,117 @@
+# ============================================================
+# PIPELINE CI - CROP YIELD
+# ============================================================
+# Ce workflow vérifie automatiquement le projet
+# lors d'un push ou d'une pull request.
+#
+# Étapes :
+# 1. récupération du code ;
+# 2. installation de Python ;
+# 3. installation des dépendances ;
+# 4. exécution des tests ;
+# 5. construction de l'image Docker.
+
+
+name: CI - Crop Yield
+
+
+# ============================================================
+# DÉCLENCHEURS
+# ============================================================
+
+# Le pipeline est lancé :
+# - à chaque push ;
+# - à chaque pull request.
+on:
+  push:
+  pull_request:
+
+
+# ============================================================
+# JOB 1 - TESTS
+# ============================================================
+
+jobs:
+
+  tests:
+
+    name: Tests API
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ------------------------------------------------------
+      # Récupération du dépôt
+      # ------------------------------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ------------------------------------------------------
+      # Installation de Python
+      # ------------------------------------------------------
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+
+      # ------------------------------------------------------
+      # Installation des dépendances
+      # ------------------------------------------------------
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+
+      # ------------------------------------------------------
+      # Tests automatisés
+      # ------------------------------------------------------
+
+      # Si un seul test échoue, cette étape échoue
+      # et le pipeline est automatiquement bloqué.
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v
+
+
+  # ==========================================================
+  # JOB 2 - BUILD DOCKER
+  # ==========================================================
+
+  docker-build:
+
+    name: Build Docker image
+
+    runs-on: ubuntu-latest
+
+    # Le build Docker ne démarre que si les tests
+    # du job précédent ont réussi.
+    needs: tests
+
+    steps:
+
+      # ------------------------------------------------------
+      # Récupération du dépôt
+      # ------------------------------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ------------------------------------------------------
+      # Construction de l'image Docker
+      # ------------------------------------------------------
+
+      # Le but ici est de vérifier que l'image de l'API
+      # peut toujours être construite.
+      #
+      # À ce stade, elle n'est pas envoyée sur Docker Hub.
+      - name: Build Docker image
+        run: |
+          docker build -t crop-yield-api .

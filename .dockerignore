@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.git/
+.gitignore
+mlruns/
+mlflow.db
+data/
+reports/
+*.ipynb

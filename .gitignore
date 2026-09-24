@@ -1,0 +1,32 @@
+# Environnements Python
+.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# Système
+.DS_Store
+Thumbs.db
+
+# MLflow local
+mlruns/
+mlflow.db
+
+# Données sources / générées
+data/
+
+# Variables d'environnement et secrets
+.env
+.env.*
+*.key
+*.pem
