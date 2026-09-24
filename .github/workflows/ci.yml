@@ -1,16 +1,11 @@
 # ============================================================
 # PIPELINE CI - CROP YIELD
 # ============================================================
-# Ce workflow vérifie automatiquement le projet
-# lors d'un push ou d'une pull request.
-#
-# Étapes :
-# 1. récupération du code ;
-# 2. installation de Python ;
-# 3. installation des dépendances ;
-# 4. exécution des tests ;
-# 5. construction de l'image Docker.
-
+# Pipeline d'intégration continue :
+# 1. récupération du projet et des fichiers Git LFS ;
+# 2. installation des dépendances ;
+# 3. exécution des tests API ;
+# 4. construction de l'image Docker si les tests réussissent.
 
 name: CI - Crop Yield
 
@@ -19,19 +14,16 @@ name: CI - Crop Yield
 # DÉCLENCHEURS
 # ============================================================
 
-# Le pipeline est lancé :
-# - à chaque push ;
-# - à chaque pull request.
 on:
   push:
   pull_request:
 
 
-# ============================================================
-# JOB 1 - TESTS
-# ============================================================
-
 jobs:
+
+  # ==========================================================
+  # JOB 1 - TESTS API
+  # ==========================================================
 
   tests:
 
@@ -44,9 +36,34 @@ jobs:
       # ------------------------------------------------------
       # Récupération du dépôt
       # ------------------------------------------------------
+      # lfs: true est important car notre modèle .joblib
+      # est stocké avec Git LFS.
 
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
+
+
+      # ------------------------------------------------------
+      # Vérification Git LFS
+      # ------------------------------------------------------
+
+      - name: Pull Git LFS files
+        run: |
+          git lfs pull
+
+
+      # ------------------------------------------------------
+      # Vérification du modèle
+      # ------------------------------------------------------
+      # Cette étape permet de vérifier dans les logs que
+      # le vrai fichier du modèle a bien été téléchargé.
+
+      - name: Check model file
+        run: |
+          ls -lh models/crop_yield_pipeline.joblib
+          git lfs ls-files
 
 
       # ------------------------------------------------------
@@ -73,8 +90,6 @@ jobs:
       # Tests automatisés
       # ------------------------------------------------------
 
-      # Si un seul test échoue, cette étape échoue
-      # et le pipeline est automatiquement bloqué.
       - name: Run tests
         run: |
           python -m pytest tests/ -v
@@ -90,28 +105,34 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    # Le build Docker ne démarre que si les tests
-    # du job précédent ont réussi.
+    # Le build ne démarre que si tous les tests réussissent.
     needs: tests
 
     steps:
 
       # ------------------------------------------------------
-      # Récupération du dépôt
+      # Récupération du dépôt + modèle Git LFS
       # ------------------------------------------------------
 
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
+
+
+      # ------------------------------------------------------
+      # Récupération explicite du modèle
+      # ------------------------------------------------------
+
+      - name: Pull Git LFS files
+        run: |
+          git lfs pull
 
 
       # ------------------------------------------------------
       # Construction de l'image Docker
       # ------------------------------------------------------
 
-      # Le but ici est de vérifier que l'image de l'API
-      # peut toujours être construite.
-      #
-      # À ce stade, elle n'est pas envoyée sur Docker Hub.
       - name: Build Docker image
         run: |
           docker build -t crop-yield-api .
